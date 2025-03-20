@@ -1,3 +1,4 @@
+CREATE SCHEMA IF NOT EXISTS analytics;
 CREATE SCHEMA IF NOT EXISTS operations;
 
 CREATE TABLE IF NOT EXISTS operations.customers(

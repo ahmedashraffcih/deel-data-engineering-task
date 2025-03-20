@@ -3,12 +3,15 @@ services:
     build:
       context: ./docker/postgres-db
     environment:
-      - POSTGRES_USER=finance_db_user
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_DB=finance_db
+      - POSTGRES_USER=${SOURCE_DB_USER}
+      - POSTGRES_PASSWORD=${SOURCE_DB_PASSWORD}
+      - POSTGRES_DB=${SOURCE_DB}
     volumes:
-        - "${PWD}/db-data:/var/lib/postgresql/data"
-        - "${PWD}/db-scripts/initialize_db_ddl.sql:/docker-entrypoint-initdb.d/initialize_db_ddl.sql"
+      - postgres_data:/var/lib/postgresql/data
+      - "${PWD}/db-scripts/initialize_db_ddl.sql:/docker-entrypoint-initdb.d/initialize_db_ddl.sql:ro"
     ports:
       - "5432:5432"
     command: ["postgres", "-c", "wal_level=logical", "-c", "hot_standby=on"]
+
+volumes:
+  postgres_data:
