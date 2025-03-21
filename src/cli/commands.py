@@ -32,16 +32,16 @@ class AnalyticsQueries:
         conn = self.connect()
 
         query = """
-        SELECT 
-            delivery_date::date, 
-            status, 
-            COUNT(*) as order_count    
+        SELECT
+            delivery_date::date,
+            status,
+            COUNT(*) as order_count
         FROM analytics.analytical_orders
         WHERE status <> 'COMPLETED'
         AND delivery_date IS NOT NULL
-        GROUP BY 
+        GROUP BY
         delivery_date::date, status
-        ORDER BY 
+        ORDER BY
         delivery_date::date, status
         """
 
@@ -64,13 +64,13 @@ class AnalyticsQueries:
         conn = self.connect()
 
         query = f"""
-        SELECT 
+        SELECT
             delivery_date::date,
             COUNT(*) as order_count,
             COUNT(DISTINCT customer_id) as unique_customers
-        FROM
+        FROM 
             analytics.analytical_orders
-        WHERE 
+        WHERE
             status <> 'COMPLETED'
             AND delivery_date IS NOT NULL
         GROUP BY
@@ -93,17 +93,17 @@ class AnalyticsQueries:
         conn = self.connect()
 
         query = """
-        SELECT 
+        SELECT
             oi.product_id,
             oi.product_name,
             SUM(oi.quantity) as pending_items
-        FROM 
+        FROM
             analytics.analytical_order_items oi
-        WHERE 
+        WHERE
             oi.order_status = 'PENDING'
-        GROUP BY 
+        GROUP BY
             oi.product_id, oi.product_name
-        ORDER BY 
+        ORDER BY
             pending_items DESC
         """
 
@@ -124,7 +124,7 @@ class AnalyticsQueries:
         conn = self.connect()
 
         query = f"""
-        SELECT 
+        SELECT
             o.customer_id,
             o.customer_name,
             COUNT(*) as pending_order_count,
@@ -135,7 +135,7 @@ class AnalyticsQueries:
             o.status = 'PENDING'
         GROUP BY
             o.customer_id, o.customer_name
-        ORDER BY 
+        ORDER BY
             pending_order_count DESC
         LIMIT {limit}
         """
@@ -147,3 +147,45 @@ class AnalyticsQueries:
         except Exception as e:
             logger.error(f"Error running top_customers_with_pending_orders query: {e}")
             raise
+
+    # def execute_query(self, query: str, params: tuple = None) -> List[Dict]:
+    #     """Execute a custom query and return results."""
+    #     conn = self.connect()
+    #     try:
+    #         with conn.cursor() as cursor:
+    #             if params:
+    #                 cursor.execute(query, params)
+    #             else:
+    #                 cursor.execute(query)
+    #             return cursor.fetchall()
+    #     except Exception as e:
+    #         logger.error(f"Error executing query: {e}")
+    #         raise
+
+
+def export_to_csv(data: List[Dict[str, Any]], filename: str):
+    """Export data to a CSV file."""
+    if not data:
+        logger.warning(f"No data to export to {filename}")
+        return
+
+    # Ensure output directory exists
+    os.makedirs(settings.OUTPUT_DIRECTORY, exist_ok=True)
+
+    # Full path for the file
+    filepath = os.path.join(settings.OUTPUT_DIRECTORY, filename)
+
+    # Get column headers from the first record
+    fieldnames = list(data[0].keys())
+
+    try:
+        with open(filepath, "w", newline="") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
+
+        logger.info(f"Data exported to {filepath}")
+    except Exception as e:
+        logger.error(f"Error exporting to CSV {filepath}: {e}")
+        raise
+
