@@ -189,3 +189,110 @@ def export_to_csv(data: List[Dict[str, Any]], filename: str):
         logger.error(f"Error exporting to CSV {filepath}: {e}")
         raise
 
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+def setup_analytics_db():
+    """Initialize the analytics database schema."""
+    from etl.load import DataLoader
+
+    loader = DataLoader()
+    try:
+        loader.ensure_schema_exists()
+        click.echo("Analytics database schema setup completed.")
+    finally:
+        loader.close()
+
+
+@cli.command()
+def run_etl():
+    """Run the ETL process to sync data from source to analytics database."""
+    from etl.extract import DataExtractor
+    from etl.transform import DataTransformer
+    from etl.load import DataLoader
+
+    extractor = DataExtractor()
+    transformer = DataTransformer()
+    loader = DataLoader()
+
+    try:
+        loader.ensure_schema_exists()
+
+        # Extract data
+        orders, order_items, customers, products = extractor.extract_data_batch()
+
+        if not orders:
+            click.echo("No new data to process.")
+            return
+
+        # Transform data
+        transformed_orders, transformed_order_items = transformer.transform_data(
+            orders, order_items, customers, products
+        )
+
+        # Load data
+        loader.load_orders(transformed_orders)
+        loader.load_order_items(transformed_order_items)
+
+        click.echo(
+            f"ETL process completed. Processed {len(transformed_orders)} orders."
+        )
+    except Exception as e:
+        logger.error(f"Error in ETL process: {e}")
+        click.echo(f"Error in ETL process: {e}")
+    finally:
+        extractor.close()
+        loader.close()
+
+
+@cli.command()
+@click.option("--all", is_flag=True, help="Export all reports")
+@click.option(
+    "--open-orders", is_flag=True, help="Export open orders by date and status"
+)
+@click.option(
+    "--top-dates", is_flag=True, help="Export top delivery dates with open orders"
+)
+@click.option("--pending-items", is_flag=True, help="Export pending items by product")
+@click.option(
+    "--top-customers", is_flag=True, help="Export top customers with pending orders"
+)
+def export_reports(all, open_orders, top_dates, pending_items, top_customers):
+    """Export analytical reports to CSV files."""
+    queries = AnalyticsQueries()
+
+    try:
+        if all or open_orders:
+            data = queries.get_open_orders_by_date_status()
+            export_to_csv(data, "open_orders_by_date_status.csv")
+            click.echo("Exported open orders by date and status.")
+
+        if all or top_dates:
+            data = queries.get_top_delivery_dates_with_open_orders()
+            export_to_csv(data, "top_delivery_dates.csv")
+            click.echo("Exported top delivery dates with open orders.")
+
+        if all or pending_items:
+            data = queries.get_pending_items_by_product()
+            export_to_csv(data, "pending_items_by_product.csv")
+            click.echo("Exported pending items by product.")
+
+        if all or top_customers:
+            data = queries.get_top_customers_with_pending_orders()
+            export_to_csv(data, "top_customers_with_pending_orders.csv")
+            click.echo("Exported top customers with pending orders.")
+
+        if not any([all, open_orders, top_dates, pending_items, top_customers]):
+            click.echo(
+                "No reports selected for export. Use --all or specify individual reports."
+            )
+    except Exception as e:
+        logger.error(f"Error exporting reports: {e}")
+        click.echo(f"Error exporting reports: {e}")
+    finally:
+        queries.close()
+
