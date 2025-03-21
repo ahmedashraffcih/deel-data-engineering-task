@@ -3,8 +3,9 @@ import click
 from utils.logger import logger
 from config.settings import settings
 
-def run_etl():
-    """Run the ETL process to sync data from source to analytics database."""
+
+def run_continuous_etl():
+    """Run the ETL process continuously."""
     from etl.extract import DataExtractor
     from etl.transform import DataTransformer
     from etl.load import DataLoader
@@ -14,35 +15,48 @@ def run_etl():
     loader = DataLoader()
 
     try:
-        # Ensure analytics schema exists
+        # check if the schema exists
         loader.ensure_schema_exists()
 
-        # Extract data
-        orders, order_items, customers, products = extractor.extract_data_batch()
+        logger.info("Starting continuous ETL process")
 
-        if not orders:
-            click.echo("No new data to process.")
-            return
+        while True:
+            try:
+                # Extract data
+                orders, order_items, customers, products = (
+                    extractor.extract_data_batch()
+                )
 
-        # Transform data
-        transformed_orders, transformed_order_items = transformer.transform_data(
-            orders, order_items, customers, products
-        )
+                if orders:
+                    # Transform data
+                    transformed_orders, transformed_order_items = (
+                        transformer.transform_data(
+                            orders, order_items, customers, products
+                        )
+                    )
 
-        # Load data
-        loader.load_orders(transformed_orders)
-        loader.load_order_items(transformed_order_items)
+                    # Load data
+                    loader.load_orders(transformed_orders)
+                    loader.load_order_items(transformed_order_items)
 
-        click.echo(
-            f"ETL process completed. Processed {len(transformed_orders)} orders."
-        )
-    except Exception as e:
-        logger.error(f"Error in ETL process: {e}")
-        click.echo(f"Error in ETL process: {e}")
+                    logger.info(f"Processed {len(transformed_orders)} orders")
+                else:
+                    logger.info("No new data to process")
+
+                # Sleep for polling interval
+                time.sleep(settings.POLLING_INTERVAL)
+            except Exception as e:
+                logger.error(f"Error in ETL iteration: {e}")
+                # Sleep before retry
+                time.sleep(settings.POLLING_INTERVAL)
+    except KeyboardInterrupt:
+        logger.info("ETL process interrupted by user")
     finally:
         extractor.close()
         loader.close()
 
 
 if __name__ == "__main__":
-    run_etl()
+    from cli.commands import cli
+
+    cli()

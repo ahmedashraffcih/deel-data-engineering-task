@@ -39,7 +39,7 @@ class settings(BaseModel):
         env_file_encoding = "utf-8"
 
     BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", "1000"))
-    POLLING_INTERVAL: int = os.getenv("POLLING_INTERVAL")
+    POLLING_INTERVAL: int = int(os.getenv("POLLING_INTERVAL", "60"))
     OUTPUT_DIRECTORY: str = os.getenv("OUTPUT_DIRECTORY")
 
 

@@ -1,21 +1,17 @@
 services:
   transactions-db:
-    image: postgres:15
+    build:
+      context: ./docker/postgres-db
     environment:
       - POSTGRES_USER=${SOURCE_DB_USER}
       - POSTGRES_PASSWORD=${SOURCE_DB_PASSWORD}
       - POSTGRES_DB=${SOURCE_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${PWD}/db-data:/var/lib/postgresql/data
       - ./db-scripts/initialize_db_ddl.sql:/docker-entrypoint-initdb.d/initialize_db_ddl.sql:ro
     ports:
       - "5432:5432"
     command: ["postgres", "-c", "wal_level=logical", "-c", "hot_standby=on"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SOURCE_DB_USER} -d ${SOURCE_DB}"]
-      interval: 5s
-      retries: 5
-      start_period: 10s
 
   app:
     build:
@@ -25,9 +21,6 @@ services:
       - DATABASE_URL=postgresql://${SOURCE_DB_USER}:${SOURCE_DB_PASSWORD}@transactions-db:5432/${SOURCE_DB}
       - SOURCE_DB_HOST=transactions-db
       - DEST_DB_HOST=transactions-db
-    depends_on:
-      transactions-db:
-        condition: service_healthy
     volumes:
       - ./logs:/app/logs
       - ./output:/app/output

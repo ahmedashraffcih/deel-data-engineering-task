@@ -296,3 +296,13 @@ def export_reports(all, open_orders, top_dates, pending_items, top_customers):
     finally:
         queries.close()
 
+
+@cli.command()
+@click.option('--polling-interval', default=None, type=int, help='Override the polling interval in seconds')
+def run_continuous_etl(polling_interval):
+    """Run the ETL process continuously."""
+    if polling_interval:
+        settings.POLLING_INTERVAL = polling_interval
+    
+    from main import run_continuous_etl as continuous_etl
+    continuous_etl()

@@ -3,3 +3,5 @@ db-data/
 **/_pycache_
 *.log
 *.pyc
+src/test.py
+src/app
