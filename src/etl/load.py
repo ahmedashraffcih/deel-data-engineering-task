@@ -134,15 +134,6 @@ class DataLoader:
 
         try:
             with conn.cursor() as cursor:
-                for order_dict in order_dicts:
-                    try:
-                        logger.debug(f"Attempting to load order: {order_dict}")
-                        for key, value in order_dict.items():
-                            logger.debug(f"Field {key}: {value} (type: {type(value)})")
-                    except Exception as e:
-                        logger.error(f"Error processing order dict: {e}")
-                        raise
-
                 execute_batch(
                     cursor, upsert_query, order_dicts, page_size=settings.BATCH_SIZE
                 )

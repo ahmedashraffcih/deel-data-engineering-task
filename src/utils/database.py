@@ -2,7 +2,6 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from config.settings import settings

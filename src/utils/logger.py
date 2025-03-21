@@ -25,13 +25,12 @@ class LoggerConfig:
             log_dir (str): The directory where log files will be stored.
         """
         self.base_dir = os.path.dirname(os.path.dirname(__file__))
-        self.config_dir = os.path.join(self.base_dir, "config")  # Config folder path
-        self.log_dir = os.path.join(self.base_dir, log_dir)  # Log directory
+        self.config_dir = os.path.join(self.base_dir, "config")
+        self.log_dir = os.path.join(self.base_dir, log_dir)
         self.config_path = os.path.join(self.config_dir, config_filename)
 
         os.makedirs(self.log_dir, exist_ok=True)
 
-        # Setup logging
         self.log_filename = self._setup_logging()
 
     def _setup_logging(self) -> str:
@@ -49,10 +48,8 @@ class LoggerConfig:
                 f"Logging configuration file not found: {self.config_path}"
             )
 
-        # Load logging config, but ignore file handlers from the .ini file
         logging.config.fileConfig(self.config_path, disable_existing_loggers=False)
 
-        # Manually create a file handler instead of using `%(logfilename)s`
         file_handler = logging.FileHandler(log_filename, mode="a", encoding="utf-8")
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(lineno)d - %(message)s",
@@ -74,12 +71,6 @@ class LoggerConfig:
             "httpx",
             "httpcore",
             "urllib3",
-            "transformers",
-            "azure",
-            "_trace",
-            "_universal",
-            "azure.core.pipeline.policies._universal",
-            "azure.ai.documentintelligence",
             "requests",
         ]
         for logger_name in suppress_logs:

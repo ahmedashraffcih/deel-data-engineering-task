@@ -41,7 +41,7 @@ class DataTransformer:
             # Calculate totals
             total_items = sum(item["quanity"] for item in items)
             total_amount = sum(item["quanity"] * product_dict[item["product_id"]]["unity_price"] for item in items)
-            logger.debug(f"Processing order: {order}")
+            # logger.debug(f"Processing order: {order}")
             # Create order data
             try:
                 
@@ -71,8 +71,7 @@ class DataTransformer:
             for item in items:
                 product_id = int(item["product_id"])
                 product = product_dict.get(product_id, {
-                    "product_name": "Unknown",
-                    "unity_price": 0.0
+                    "product_name": "Unknown"
                 })
 
                 item_data = OrderItemData(

@@ -7,8 +7,8 @@ services:
       - POSTGRES_PASSWORD=${SOURCE_DB_PASSWORD}
       - POSTGRES_DB=${SOURCE_DB}
     volumes:
-      - ${PWD}/db-data:/var/lib/postgresql/data
-      - ./db-scripts/initialize_db_ddl.sql:/docker-entrypoint-initdb.d/initialize_db_ddl.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - "${PWD}/db-scripts/initialize_db_ddl.sql:/docker-entrypoint-initdb.d/initialize_db_ddl.sql:ro"
     ports:
       - "5432:5432"
     command: ["postgres", "-c", "wal_level=logical", "-c", "hot_standby=on"]
